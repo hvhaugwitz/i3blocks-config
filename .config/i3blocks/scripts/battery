@@ -1,0 +1,104 @@
+#!/bin/sh
+#
+# Copyright (c) 2016 Hannes von Haugwitz
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+. "${HOME}/.config/i3blocks/colours"
+
+if [ -d "/sys/class/power_supply/AC" ] ; then
+    SYMBOL=""
+
+    AC_ONLINE=$(cat /sys/class/power_supply/AC/online)
+
+    ENERGY_FULL=0
+    ENERGY_NOW=9
+    POWER_NOW=0
+    for BAT in /sys/class/power_supply/BAT? ; do
+        ENERGY_FULL="$((ENERGY_FULL + $(cat "${BAT}/energy_full")))"
+        ENERGY_NOW="$((ENERGY_NOW + $(cat "${BAT}/energy_now")))"
+        POWER_NOW="$((POWER_NOW + $(cat "${BAT}/power_now")))"
+    done
+
+    STATUS=0
+    if [ "${POWER_NOW}" -gt "0" ] ; then
+        if [ "$AC_ONLINE" -eq "0" ] ; then
+            STATUS=-1
+        else
+            STATUS=1
+        fi
+    fi
+
+    if [ "$ENERGY_FULL" -eq "0" ] ; then
+        SYMBOL=""
+        printf "%s\n" "${SYMBOL}"
+        printf "%s\n" "${SYMBOL}"
+        echo
+        exit 33
+    else
+        CAPACITY=$((ENERGY_NOW*100/ENERGY_FULL))
+        if [ "$AC_ONLINE" -eq "0" ] ; then
+            if [ "${CAPACITY}" -le "20" ] ; then
+                SYMBOL=""
+            elif [ "${CAPACITY}" -le "40" ] ; then
+                SYMBOL=""
+            elif [ "${CAPACITY}" -le "60" ] ; then
+                SYMBOL=""
+            elif [ "${CAPACITY}" -le "80" ] ; then
+                SYMBOL=""
+            elif [ "${CAPACITY}" -le "100" ] ; then
+                SYMBOL=""
+            fi
+        fi
+
+        printf "%s %s%%" "${SYMBOL}" "${CAPACITY}"
+        if [ "${POWER_NOW}" -gt "0" ] ; then
+            if [ "${STATUS}" -gt "0" ] ; then
+                REMAINING_ENERGY=$((ENERGY_FULL - ENERGY_NOW))
+            else
+                REMAINING_ENERGY=${ENERGY_NOW}
+            fi
+            PRESENT_RATE_PER_MIN=$(( POWER_NOW / 60 ))
+            REMAINING_TOTAL_MINUTES=$(( REMAINING_ENERGY / PRESENT_RATE_PER_MIN ))
+
+            REMAINING_HOURS=$(( REMAINING_TOTAL_MINUTES / 60 ))
+            REMAINING_MINUTES=$(( REMAINING_TOTAL_MINUTES - (REMAINING_HOURS*60) ))
+            POWER_NOW=$((POWER_NOW/1000))
+            printf " %s.%sW %02d:%02d" "$((POWER_NOW/1000))" "$((POWER_NOW%1000/100))" "$REMAINING_HOURS" "$REMAINING_MINUTES"
+        fi
+        printf "\n"
+        echo "${SYMBOL} ${CAPACITY}%"
+
+        if [ "${STATUS}" -lt "0" ] ; then
+            if [ "$CAPACITY" -lt "10" ] ; then
+                exit 33
+            elif [ "$CAPACITY" -lt "20" ] ; then
+                echo "${COLOUR_RED}"
+            else
+                echo "${COLOUR_ORANGE}"
+            fi
+        elif [ "${STATUS}" -gt "0" ] ; then
+            echo "${COLOUR_YELLOW}"
+        elif [ "${CAPACITY}" -eq "100" ] ; then
+            echo "${COLOUR_GREEN}"
+        fi
+    fi
+fi
+
+exit 0

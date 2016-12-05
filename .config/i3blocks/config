@@ -1,0 +1,45 @@
+# i3blocks config file
+
+# global properties
+command=~/.config/i3blocks/scripts/$BLOCK_NAME
+separator_block_width=15
+markup=none
+interval=5
+
+[ipv6]
+interval=2
+
+[cpu_usage]
+label=
+command=/usr/share/i3blocks/cpu_usage
+separator=false
+
+[coretemp]
+
+[load_average]
+label=
+command=/usr/share/i3blocks/load_average
+
+[memory]
+label=
+command=/usr/share/i3blocks/memory
+
+[disk-home]
+label=
+command=/usr/share/i3blocks/disk
+instance=/home
+
+[iface]
+interval=2
+
+[battery]
+interval=2
+
+[timezones]
+markup=pango
+interval=1
+
+[datetime]
+command=date "+<span foreground='#00FFFF'>%a</span> %b %d <span foreground='#00FFFF'>%Y</span> %H:%M<span foreground='#00FFFF'>:%S%z</span>"
+markup=pango
+interval=1

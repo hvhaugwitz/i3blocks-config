@@ -1,0 +1,73 @@
+#!/bin/sh
+#
+# Copyright (c) 2016 Hannes von Haugwitz
+#
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+#
+# The above copyright notice and this permission notice shall be included in
+# all copies or substantial portions of the Software.
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+# THE SOFTWARE.
+
+. "${HOME}/.config/i3blocks/colours"
+
+LABEL=
+
+if [ -n "${BLOCK_INSTANCE}" ]; then
+  INTERFACE=${BLOCK_INSTANCE}
+else
+  INTERFACE=$(ip route | perl -n -e'/^default .*dev ([a-z][a-z0-9]+)/ && print $1')
+fi
+
+if [ -z "${INTERFACE}" ] || [ ! -d "/sys/class/net/${INTERFACE}" ] || [ "$(cat "/sys/class/net/${INTERFACE}/operstate")" = 'down' ]; then
+    echo "${LABEL} down"
+    echo "${LABEL} down"
+    echo "${COLOUR_RED}"
+else
+    IP=$(ip addr show "${INTERFACE}" | awk '/inet / { print $2 }' | cut -d / -f 1)
+    COLOUR=
+    if [ "$(cat "/sys/class/net/${INTERFACE}/type")" -eq "512" ]; then
+        LABEL=
+
+        printf "%s %s\n" "${LABEL}" "${IP}"
+    elif [ -d "/sys/class/net/${INTERFACE}/wireless" ]; then
+        LABEL=
+        WIFI_SIGNAL=$(grep "${INTERFACE}" /proc/net/wireless | awk '{ print int($3 * 100 / 70) }')
+        WIFI_SSID=$(/sbin/iw dev "${INTERFACE}" link | grep SSID | cut -d " " -f 2-)
+
+        if [ "${WIFI_SIGNAL}" -lt "20" ] ; then
+            COLOUR="${COLOUR_RED}"
+        elif [ "${WIFI_SIGNAL}" -lt "80" ] ; then
+            COLOUR="${COLOUR_ORANGE}"
+        else
+            COLOUR="${COLOUR_GREEN}"
+        fi
+
+        printf "%s %s (%s%% at %s)\n" "${LABEL}" "${IP}" "${WIFI_SIGNAL}" "${WIFI_SSID}"
+    else
+        ETHERNET_SPEED=$(cat "/sys/class/net/${INTERFACE}/speed")
+
+        if [ "${ETHERNET_SPEED}" -eq "1000" ] ; then
+            COLOUR="${COLOUR_GREEN}"
+        elif [ "${ETHERNET_SPEED}" -eq "100" ] ; then
+            COLOUR="${COLOUR_ORANGE}"
+        fi
+
+        printf "%s %s (%s Mbit/s)\n" "${LABEL}" "${IP}" "${ETHERNET_SPEED}"
+    fi
+    printf "%s %s\n" "${LABEL}" "${IP}"
+    echo "${COLOUR}"
+fi
+
+exit 0
