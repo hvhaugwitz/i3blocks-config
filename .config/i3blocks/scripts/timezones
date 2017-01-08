@@ -21,8 +21,8 @@
 # THE SOFTWARE.
 
 if [ -f "${HOME}/.config/i3blocks/timezones" ] ; then
-    while read -r TIMEZONE COLOR ; do
-        OUTPUT+="${OUTPUT:+ }$(TZ=$TIMEZONE date "+<span foreground='${COLOR}'>%H:%M %Z</span>")"
+    while read -r TIMEZONE COLOUR ; do
+        OUTPUT="${OUTPUT}${OUTPUT:+ }$(TZ=$TIMEZONE date "+<span foreground='${COLOUR}'>%H:%M %Z</span>")"
     done < "${HOME}/.config/i3blocks/timezones"
 else
     OUTPUT="$(TZ=Etc/UTC date "+<span foreground='#FFFF00'>%H:%M %Z</span>")"
