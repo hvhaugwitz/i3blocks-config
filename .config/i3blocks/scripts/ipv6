@@ -30,6 +30,11 @@ if [ -z "${IPV6}" ] ; then
     IPV6_COLOUR=${COLOUR_RED}
 fi
 
+# highlight disabled IPv6 privacy extensions
+if echo "${IPV6}" | grep -Eq "[0-9a-f]{1,4}(:[0-9a-f]{1,4}){4}:[0-9a-f]{0,2}ff:fe[0-9a-f]{2}:[0-9a-f]{4}"; then
+    IPV6_COLOUR=${COLOUR_ORANGE}
+fi
+
 echo "${IPV6}"
 echo "${IPV6}"
 echo "${IPV6_COLOUR}"
